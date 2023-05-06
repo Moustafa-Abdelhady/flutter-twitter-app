@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
+import 'dart:convert' as convert;
+import 'package:http/http.dart' as http;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:twitter_clone/views/pages/profilepage.dart';
-// import 'package:twitter_clone/views/pages/massegepage.dart';
+import 'package:twitter_clone/views/pages/loginpage.dart';
+import 'package:twitter_clone/main.dart';
+import 'dart:html' as html;
+import 'package:dio/dio.dart';
+import '../../models/postsModel.dart';
+import '../../services/post_data.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({Key? key}) : super(key: key);
@@ -10,80 +19,210 @@ class Homepage extends StatefulWidget {
   _HomepageState createState() => _HomepageState();
 }
 
+String? getCookie(String key) {
+  final cookies = html.document.cookie!.split(';');
+  for (var cookie in cookies) {
+    final keyValue = cookie.split('=');
+    if (keyValue[0].trim() == key) {
+      return keyValue[1];
+    }
+  }
+  return null;
+}
+
+void deleteCookie(String key) {
+  html.document.cookie =
+      '$key=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+}
+
 class _HomepageState extends State<Homepage> {
+  final postService = PostService();
+  List<PostModel> _post = [];
+ 
+  // late Future<List<PostModel>> _postList;
+  bool loaded = false;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    // _postList = PostService().postData();
+ loaded = true;
+    getUserData();
+  }
+
+  final cookie = getCookie('acessToken');
+
+  Future<dynamic> getUserData() async {
+    
+     print('loool1 $_post');
+    final posts = await postService.postData();
+    print('lool $posts');
+    
+    if (posts != null && posts.isNotEmpty ) {
+      setState(() {
+        _post = posts;
+        print('loool$_post');
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: Drawer(
-          backgroundColor: Colors.white,
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children:[
-              UserAccountsDrawerHeader(
-                  currentAccountPictureSize: Size.fromRadius(30),
-                  decoration: BoxDecoration(color: Colors.white),
-                  currentAccountPicture: CircleAvatar(
-                    backgroundImage: AssetImage('assets/imgflo.jpg'),
-                  ),
-                  accountName: Text(
-                    'Engy Mohammed',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  accountEmail: Text('@engy5821',
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 143, 141, 141),
-                      ),
-                    ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 15,left: 15),
-                        child: Row(
-                          children: [
-                            Text( '0',
-                            style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),),
-                             Text( 'Following',
-                            style: TextStyle(color:Color.fromARGB(255, 143, 141, 141), fontSize: 13),)
-                            ,
-                            SizedBox(width: 20,),
-                            Text( '0',
-                            style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold),),
-                             Text( 'Followers',
-                            style: TextStyle(color:Color.fromARGB(255, 143, 141, 141), fontSize: 13),)
-                          ],
-                        ),
-                      ), 
-              ListTile(
-                leading: Icon(Icons.person,color: Colors.black,),
-                title: Text('Profile',
-                style: TextStyle(fontSize: 18,fontWeight: FontWeight.w600)),
-                onTap: (){
-                  Navigator.push(context,MaterialPageRoute(builder:  (context)=>Profilepage()));
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.line_style_outlined,color: Colors.black,),
-                title: Text('Topics',
-                style: TextStyle(fontSize: 18,fontWeight: FontWeight.w600),),
-                onTap: (){},
-              ),
-              ListTile(
-                leading: Icon(Icons.list_alt_sharp,color: Colors.black,),
-                title: Text('List',
-                style: TextStyle(fontSize: 18,fontWeight: FontWeight.w600),),
-                onTap: (){},
-              ),
-              ListTile(
-                leading: Icon(Icons.bookmark,color: Colors.black,),
-                title: Text('Bookmark',
-                style: TextStyle(fontSize: 18,fontWeight: FontWeight.w600),),
-                onTap: (){},
-              ),
-            ],
-          )),
+        backgroundColor: Colors.white,
+        child:loaded == true
+            ? ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  if (_post.length != null && _post.isNotEmpty)
+                    // Expanded(
+                        // child:  ListView.builder(
+              
+                            // itemCount: _post.length,
+                            // itemBuilder: (context, index) {
+                              // final post = _post[index];
+                              // return 
+                              Column(
+                                children: [
+                                  for(int i=_post.length-1 ; i<_post.length;i++)
+                                  if (_post[0].user.image != null)
+                                    UserAccountsDrawerHeader(
+                                      currentAccountPictureSize:
+                                          Size.fromRadius(30),
+                                      decoration:
+                                          BoxDecoration(color: Colors.white),
+                                      currentAccountPicture: ClipOval(
+                                        child: CachedNetworkImage(
+                                          imageUrl:
+                                              'http://localhost:8000/api${_post[0].user.image}',
+                                          placeholder: (context, url) =>
+                                              CircularProgressIndicator(),
+                                          errorWidget: (context, url, error) =>
+                                              Icon(Icons.error),
+                                          fit: BoxFit.cover,
+                                          width: 100,
+                                          height: 100,
+                                        ),
+                                      ),
+                                      accountName: Text(
+                                        _post[0].user.fullname ,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                      accountEmail: Text(
+                                        _post[0].user.username ,
+                                        style: TextStyle(
+                                          color: Color.fromARGB(
+                                              255, 143, 141, 141),
+                                        ),
+                                      ),
+                                    ),
+                                 
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          right: 15, left: 15),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            '0',
+                                            style: TextStyle(
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          Text(
+                                            'Following',
+                                            style: TextStyle(
+                                                color: Color.fromARGB(
+                                                    255, 143, 141, 141),
+                                                fontSize: 13),
+                                          ),
+                                          SizedBox(
+                                            width: 20,
+                                          ),
+                                          Text(
+                                            '0',
+                                            style: TextStyle(
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          Text(
+                                            'Followers',
+                                            style: TextStyle(
+                                                color: Color.fromARGB(
+                                                    255, 143, 141, 141),
+                                                fontSize: 13),
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  ListTile(
+                                    leading: Icon(
+                                      Icons.person,
+                                      color: Colors.black,
+                                    ),
+                                    title: Text('Profile',
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600)),
+                                    onTap: () {
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  Profilepage()));
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: Icon(
+                                      Icons.line_style_outlined,
+                                      color: Colors.black,
+                                    ),
+                                    title: Text(
+                                      'Topics',
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    onTap: () {},
+                                  ),
+                                  ListTile(
+                                    leading: Icon(
+                                      Icons.list_alt_sharp,
+                                      color: Colors.black,
+                                    ),
+                                    title: Text(
+                                      'List',
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    onTap: () {},
+                                  ),
+                                  ListTile(
+                                    leading: Icon(
+                                      Icons.bookmark,
+                                      color: Colors.black,
+                                    ),
+                                    title: Text(
+                                      'Bookmark',
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    onTap: () {},
+                                  ),
+                                ],
+                              ),
+                            // }))
+                ],
+              ): CircularProgressIndicator(),
+           
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         backgroundColor: Colors.blue,
@@ -92,7 +231,6 @@ class _HomepageState extends State<Homepage> {
           size: 30,
         ),
       ),
-      // appBar: AppBar(automaticallyImplyLeading: false),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.only(left: 10, right: 10, top: 20),
@@ -125,11 +263,37 @@ class _HomepageState extends State<Homepage> {
                                     image:
                                         AssetImage('assets/twitterlogo.png'))),
                           ),
-                          const Icon(
-                            Icons.amp_stories_rounded,
-                            color: Colors.black,
-                            size: 32,
+                          Container(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                final dio = Dio();
+                                // Add your button press logic here
+
+                                print(cookie);
+                                print('lool');
+
+                                deleteCookie('acessToken');
+
+                                print('loool');
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (context) {
+                                    return MyApp();
+                                  }),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: Text('Logout'),
+                            ),
                           )
+                          // const Icon(
+                          //   Icons.amp_stories_rounded,
+                          //   color: Colors.black,
+                          //   size: 32,
+                          // )
                         ],
                       ),
                       const Divider(

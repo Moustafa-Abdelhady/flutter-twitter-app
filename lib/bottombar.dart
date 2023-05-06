@@ -3,6 +3,7 @@ import 'package:twitter_clone/views/pages/homepage.dart';
 import 'package:twitter_clone/views/pages/searchpage.dart';
 import 'package:twitter_clone/views/pages/massegepage.dart';
 import 'package:twitter_clone/views/pages/notificationpage.dart';
+import 'package:twitter_clone/views/pages/profilepage.dart';
 
 class Bottombar extends StatefulWidget {
   const Bottombar({Key? key}) : super(key: key);
@@ -22,6 +23,7 @@ class _BottombarState extends State<Bottombar> {
   static const List<Widget> _widgetOptions = <Widget>[
     Homepage(),
     Searchpage(),
+    Profilepage(),
     Notificationpage(),
     Massegepage(),
 
@@ -48,6 +50,12 @@ class _BottombarState extends State<Bottombar> {
           BottomNavigationBarItem(
               icon: Icon(
                 Icons.search,
+              ),
+              label: 'engy'
+              ),
+               BottomNavigationBarItem(
+              icon: Icon(
+                Icons.person,
               ),
               label: 'engy'
               ),
